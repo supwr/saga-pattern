@@ -1,0 +1,62 @@
+version: '3.9'
+
+services:
+  restaurant-db:
+    container_name: postgres.restaurant.dev
+    image: postgres:latest
+    env_file: .env
+    environment:
+      POSTGRES_DB: $DATABASE_NAME
+      POSTGRES_USER: $DATABASE_USERNAME
+      POSTGRES_PASSWORD: $DATABASE_PASSWORD
+    volumes:
+      - postgres_restaurant_data:/data/postgres
+    ports:
+      - 5432:5432
+    networks:
+      - restaurant_saga_network
+  orders-app:
+    container_name: app.orders.dev
+    env_file: .env
+    build:
+      dockerfile: ./docker/Dockerfile
+      context: .
+      target: orders-app
+    ports:
+      - 8001:8001
+    depends_on:
+      - restaurant-db
+    networks:
+      - restaurant_saga_network
+  payments-app:
+    container_name: app.payments.dev
+    env_file: .env
+    build:
+      dockerfile: ./docker/Dockerfile
+      context: .
+      target: payment-app
+    ports:
+      - 8002:8002
+    depends_on:
+      - restaurant-db
+    networks:
+      - restaurant_saga_network
+  kitchen-app:
+    container_name: app.kitchen.dev
+    env_file: .env
+    build:
+      dockerfile: ./docker/Dockerfile
+      context: .
+      target: kitchen-app
+    ports:
+      - 8003:8003
+    depends_on:
+      - restaurant-db
+    networks:
+      - restaurant_saga_network
+
+volumes:
+  postgres_restaurant_data:
+
+networks:
+  restaurant_saga_network:
