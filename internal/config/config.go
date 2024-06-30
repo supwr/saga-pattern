@@ -11,9 +11,12 @@ type Config struct {
 	DatabaseUsername string `envconfig:"database_username"`
 	DatabasePassword string `envconfig:"database_password"`
 	MigrationsDir    string `envconfig:"migrations_dir"`
+
+	KafkaKitchenTopic string `envconfig:"kafka_kitchen_topic"`
+	KafkaBroker       string `envconfig:"kafka_broker"`
 }
 
 func New() (cfg Config, err error) {
-	err := envconfig.Process("", &cfg)
-	return
+	err = envconfig.Process("", &cfg)
+	return cfg, err
 }

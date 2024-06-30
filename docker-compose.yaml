@@ -15,6 +15,7 @@ services:
       - 5432:5432
     networks:
       - restaurant_saga_network
+
   orders-app:
     container_name: app.orders.dev
     env_file: .env
@@ -28,6 +29,7 @@ services:
       - restaurant-db
     networks:
       - restaurant_saga_network
+
   payments-app:
     container_name: app.payments.dev
     env_file: .env
@@ -41,6 +43,7 @@ services:
       - restaurant-db
     networks:
       - restaurant_saga_network
+
   kitchen-app:
     container_name: app.kitchen.dev
     env_file: .env
@@ -52,11 +55,53 @@ services:
       - 8003:8003
     depends_on:
       - restaurant-db
+      - zookeeper
+      - kafka
     networks:
       - restaurant_saga_network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    networks:
+      - restaurant_saga_network
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 2181:2181
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    networks:
+      - restaurant_saga_network
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    networks:
+      - restaurant_saga_network
+    ports:
+      - "8082:8080"
+    restart: always
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
 
 volumes:
   postgres_restaurant_data:
 
 networks:
   restaurant_saga_network:
+    driver: bridge
